@@ -18,10 +18,16 @@ Claude Code 的「對話壓縮／清空前後」記憶搶救機制（Windows Pow
 抓最近對話交給便宜的 Haiku 模型，更新該專案的 memory.md 與 STATE.md。
 不在專案資料夾（無 tasks.md）時直接跳過，不呼叫 API。
 
-### `session-start-inject-state.ps1`（讀取端）
-掛在 `SessionStart` hook（matcher = `compact|clear`）。壓縮後或 `/clear` 後，
-把該專案的 STATE.md / memory.md / tasks.md 念回給接手的 Claude。
+### `session-start-inject-state.ps1`（壓縮後讀取端）
+掛在 `SessionStart` hook（matcher = `compact`）。自動壓縮後，把該專案的
+STATE.md / memory.md / tasks.md 念回給接手的 Claude，自動接續上次專案。
 專案來源：先看 cwd 是否為專案資料夾，否則讀 `last-active-project.txt` 指標檔。
+
+### `session-start-menu.ps1`（啟動／清空選單）
+掛在 `SessionStart` hook（matcher = `startup|clear`）。在 PowerShell 啟動 claude
+或按 `/clear` 後觸發。若 cwd 本身是專案資料夾就直接念回該專案三檔；否則列出
+`openspec\changes` 下所有專案，指示 Claude 詢問使用者要進入哪一個，選定後讀三檔、寫指標檔。
+（平台限制：Claude 無法在使用者打字前主動開口，啟動後需先送任一則訊息才會跳出選單。）
 
 ## settings.json hook 設定範例
 
@@ -29,9 +35,13 @@ Claude Code 的「對話壓縮／清空前後」記憶搶救機制（Windows Pow
 {
   "hooks": {
     "SessionStart": [
-      { "matcher": "compact|clear",
+      { "matcher": "compact",
         "hooks": [{ "type": "command",
           "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\<you>\\.claude\\session-start-inject-state.ps1\"",
+          "timeout": 10 }] },
+      { "matcher": "startup|clear",
+        "hooks": [{ "type": "command",
+          "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\<you>\\.claude\\session-start-menu.ps1\"",
           "timeout": 10 }] }
     ],
     "Stop": [
