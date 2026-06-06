@@ -74,6 +74,6 @@
   "autoUpdatesChannel": "latest",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
-  "verbose": true,
+  "verbose": false,
   "autoCompactEnabled": false
 }
