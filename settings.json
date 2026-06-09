@@ -98,5 +98,5 @@
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
   "verbose": false,
-  "autoCompactEnabled": false
+  "autoCompactEnabled": true
 }
