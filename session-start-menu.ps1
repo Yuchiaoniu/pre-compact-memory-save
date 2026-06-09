@@ -11,6 +11,20 @@
 # 注意：壓縮後（compact）走另一支 session-start-inject-state.ps1，會自動接續上次專案，不列選單。
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+# ---- 環境相依性自檢 ----
+$envWarnings = [System.Collections.Generic.List[string]]::new()
+
+# 檢查 Tesseract：已安裝但不在 PATH 時自動補進當前 session
+$tessExe = "C:\Program Files\Tesseract-OCR\tesseract.exe"
+$tessInPath = ($env:PATH -split ";") | Where-Object { $_ -like "*Tesseract-OCR*" }
+if ((Test-Path $tessExe) -and (-not $tessInPath)) {
+    $env:PATH += ";C:\Program Files\Tesseract-OCR"
+    $envWarnings.Add("⚠ Tesseract 已安裝但不在 PATH，已自動加入本次 session。若要永久生效，請以管理員身分將 C:\Program Files\Tesseract-OCR 加入系統 PATH。")
+}
+if (-not (Test-Path $tessExe)) {
+    $envWarnings.Add("⚠ Tesseract OCR 未安裝，掃描型 PDF 的 OCR 功能無法使用。安裝方式：winget install --id UB-Mannheim.TesseractOCR --accept-package-agreements --accept-source-agreements")
+}
+
 $cwd = $null
 try { $raw = [Console]::In.ReadToEnd(); if ($raw) { $cwd = ($raw | ConvertFrom-Json).cwd } } catch {}
 if (-not $cwd) { $cwd = (Get-Location).Path }
@@ -21,6 +35,7 @@ $pointer = 'C:\Users\yuchi\.claude\last-active-project.txt'
 # ---- 情況 1：cwd 自己就是專案資料夾 → 直接載入 ----
 if ((Test-Path (Join-Path $cwd 'tasks.md')) -or (Test-Path (Join-Path $cwd 'STATE.md'))) {
     $o = [System.Collections.Generic.List[string]]::new()
+    if ($envWarnings.Count -gt 0) { foreach ($w in $envWarnings) { $o.Add("【環境自檢警告】$w") }; $o.Add("") }
     $o.Add("【系統提示：已在專案資料夾啟動，以下是該專案目前狀態，請據此接續，不要重新詢問已知資訊。】")
     $o.Add("（專案資料夾：$cwd）")
     foreach ($pair in @(@('STATE.md','目前現況快照'), @('tasks.md','任務清單'))) {
@@ -53,6 +68,7 @@ if (Test-Path $pointer) {
 }
 
 $o = [System.Collections.Generic.List[string]]::new()
+if ($envWarnings.Count -gt 0) { foreach ($w in $envWarnings) { $o.Add("【環境自檢警告】$w") }; $o.Add("") }
 $o.Add("【系統提示：對話剛啟動或清空。請先協助使用者選擇要進入哪一個 openspec 專案，再開始工作。】")
 $o.Add("我的第一則回覆要把下面這份清單列給使用者看，並問他要進入哪一個專案：")
 $o.Add("")
