@@ -7,11 +7,34 @@
       "Write",
       "Edit",
       "Glob",
-      "Grep"
+      "Grep",
+      "WebFetch"
     ]
   },
   "model": "sonnet",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -Command \"$json = $input | ConvertFrom-Json; $out = @{ hookSpecificOutput = @{ hookEventName = 'PreToolUse'; permissionDecision = 'deny'; permissionDecisionReason = '請改用子代理（Agent, model: haiku）執行檔案搜尋，不得在主對話直接呼叫 Glob 或 Grep' } } | ConvertTo-Json -Depth 5 -Compress; Write-Output $out\"",
+            "shell": "powershell"
+          }
+        ]
+      },
+      {
+        "matcher": "WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -Command \"$json = $input | ConvertFrom-Json; $out = @{ hookSpecificOutput = @{ hookEventName = 'PreToolUse'; permissionDecision = 'deny'; permissionDecisionReason = '請改用子代理（Agent, model: haiku）執行網頁抓取，不得在主對話直接呼叫 WebFetch' } } | ConvertTo-Json -Depth 5 -Compress; Write-Output $out\"",
+            "shell": "powershell"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "compact",
